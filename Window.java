@@ -6,7 +6,7 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.util.concurrent.*;
 
-public class Window extends JFrame{
+public class Window extends JFrame {
     /**
      *
      */
@@ -14,88 +14,55 @@ public class Window extends JFrame{
 
     public static int BOARD_DIMS = 8;
     private Board board;
-    private static int heightPadding = 10;
-    public static int WINDOW_WIDTH=500;
-    public static int WINDOW_HEIGHT = WINDOW_WIDTH+heightPadding*2;
+    public static int WINDOW_WIDTH = 500;
+    public static int WINDOW_HEIGHT = 500;
 
-    
-    public Window(int width, int height, String title){
+    public Window(int width, int height, String title) {
         setTitle(title);
-		setSize(width, height);
+        setSize(width, height);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new GridLayout(1,1,0,0));
-        board = new Board(WINDOW_WIDTH);
+        setLayout(new GridLayout(1, 1, 0, 0));
+        board = new Board(WINDOW_WIDTH, WINDOW_HEIGHT);
         add(board);
         setVisible(true);
     }
 
-    public void createBoard(int rows, int cols){
-
-
-    }
-
-    public void updateBoard(){
-
-    }
-
-    public void end(){
+    public void end() {
         dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
         Window window = new Window(WINDOW_WIDTH, WINDOW_HEIGHT, "CHECKERS");
         boolean isRunning = true;
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in)); 
-        while (isRunning){
-            TimeUnit.SECONDS.sleep(1);
-            System.out.println();
-
-            System.out.print("Input: ");
-            String name = reader.readLine();
-            if (name.equalsIgnoreCase("reset")){
-                window.board.reset();
-            }
-            else if (name.equalsIgnoreCase("Q") || name.equalsIgnoreCase("Quit") || name.equalsIgnoreCase("exit")){
-                isRunning = false;
-                window.end();
-            }
-            else if (name.contains("move")){
-                System.out.print("Side (Red/Blue): ");
-                String side = reader.readLine();
-                while (!side.contains("blue") && !side.contains("red")){
-                    System.out.print("Invalid Side. Choose Side (Red/Blue): ");
-                    side = reader.readLine();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        while (isRunning) {
+            try {
+                System.out.print("Q,P,(C,x,y),(sX,sY,dX,dY): ");
+                String select = reader.readLine();
+                if (select.contains("q") || select.contains("Q")) {
+                    isRunning = false;
+                    window.end();
+                } else if (select.contains("p") || select.contains("P")) {
+                    window.board.printBoard();
+                } else if (select.contains("c") || select.contains("C")) {
+                    String[] cmd = select.split(",");
+                    int x = Integer.parseInt(cmd[1]);
+                    int y = Integer.parseInt(cmd[2]);
+                    window.board.printPossibleMoves(x, y);
+                } else if (select.contains(",")) {
+                    String[] xy = select.split(",");
+                    int startx = Integer.parseInt(xy[0]);
+                    int starty = Integer.parseInt(xy[1]);
+                    int endx = Integer.parseInt(xy[2]);
+                    int endy = Integer.parseInt(xy[3]);
+                    Piece piece = window.board.getBoard()[startx][starty];
+                    window.board.move(piece, endx, endy);
                 }
-                System.out.print(side + " Row,Column: ");
-                String[] rowCol = reader.readLine().split(",");
-                int row = Integer.parseInt(rowCol[0]);
-                int col = Integer.parseInt(rowCol[1]);
-                boolean validPiece = (window.board.choosePieceAt(side, row, col).col >= 0);
-                
-                while (!validPiece){
-                    window.board.printPieces(side);
-                    System.out.print("Invalid Piece, choose again." + side + " Row,Column: ");
-                    rowCol = reader.readLine().split(",");
-                    row = Integer.parseInt(rowCol[0]);
-                    col = Integer.parseInt(rowCol[1]);
-                    validPiece = (window.board.choosePieceAt(side, row, col).col >= 0);
-                }
-                Piece targetPiece = window.board.choosePieceAt(side, row, col);
-                System.out.print("Choose destination Row,Column: ");
-                String[] destination = reader.readLine().split(",");
-                int destRow = Integer.parseInt(destination[0]);
-                int destCol = Integer.parseInt(destination[1]);
-                while (window.board.choosePieceAt(side, destRow, destCol).row >=0 || destRow < 0 || destCol > BOARD_DIMS){
-                    System.out.print("Invalid Destination, choose again." + side + " Row,Column: ");
-                    destination = reader.readLine().split(",");
-                    destRow = Integer.parseInt(rowCol[0]);
-                    destRow = Integer.parseInt(rowCol[1]);
-                }
-                window.board.movePiece(targetPiece, destRow, destCol);
+            } catch (IndexOutOfBoundsException e) {
+                System.out.println("Invalid Input");
             }
         }
     }
-    
-}
 
+}
