@@ -22,4 +22,7 @@ public class Point{
     public boolean equals(Point p){
         return (p.x == this.x && p.y == this.y);
     }
+    public boolean isNull(){
+        return (this.x < 0 || this.y < 0);
+    }
 }

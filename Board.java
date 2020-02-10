@@ -41,7 +41,14 @@ public class Board extends JPanel {
     private boolean redTurn;
     private boolean hasMovedThisTurn;
 
+    private int redScore;
+    private int blueScore;
+    private boolean gameOver;
+
     public Board(Board b){
+        gameOver = b.gameOver;
+        redScore = b.redScore;
+        blueScore = b.blueScore;
         redTurn = b.redTurn;
         hasMovedThisTurn = b.hasMovedThisTurn;
         gameStarted = true;
@@ -79,7 +86,14 @@ public class Board extends JPanel {
         return result;
     }
 
+    public boolean gameIsOver(){
+        return gameOver;
+    }
+
     public Board(int windowWidth, int windowHeight) {
+        gameOver = false;
+        redScore = 0;
+        blueScore = 0;
         redTurn = true;
         hasMovedThisTurn = false;
         gameStarted = false;
@@ -161,6 +175,7 @@ public class Board extends JPanel {
             if (p[0].equals(pxy)) {
                 if (p[1].x >= 0 && p[1].y >= 0) {
                     board[p[1].x][p[1].y] = nullPiece;
+                    moves.remove(p);
                     return true;
                 }
             }
@@ -209,6 +224,9 @@ public class Board extends JPanel {
 
     public void printPossibleMoves(int xcol, int yrow) {
         ArrayList<Point[]> possibleMoves = getPossibleMoves(xcol, yrow);
+        if (hasMovedThisTurn){
+            possibleMoves = removeNonJumps(possibleMoves);
+        }
         System.out.print("| ");
         for (Point[] p : possibleMoves) {
             System.out.print("<");
@@ -366,6 +384,17 @@ public class Board extends JPanel {
         repaint();
     }
 
+    private ArrayList<Point[]> removeNonJumps(ArrayList<Point[]> moves){
+        ArrayList<Point[]> result = new ArrayList<>();
+        for (Point[] points : moves){
+            if (!points[1].isNull()){
+                result.add(points);
+                //moves.remove(points);
+            }
+        }
+        return result;
+    }
+
     //when reach end of rows on either end, turn said piece into queen
     public void move(Piece p, int xcol, int yrow) {
         boolean correctPieceForTurn = (redTurn && p.getSide() == Color.red)
@@ -374,18 +403,15 @@ public class Board extends JPanel {
                 || (!redTurn && p.getQueenColor() == Color.green);
         if (correctPieceForTurn) {
             ArrayList<Point[]> possibleMoves = getPossibleMoves(p.getxcol(), p.getyrow());
+            if (hasMovedThisTurn){
+                possibleMoves = removeNonJumps(possibleMoves);
+            }
             boolean validMove = validateMove(possibleMoves, p, xcol, yrow);
             boolean removedPiece = false;
             if (validMove) {
                 this.lastMoveBoard = new Board(this);
-
                 hasMovedThisTurn = true;
                 removedPiece = removePiece(possibleMoves, xcol, yrow);
-                if (removedPiece) {
-                    System.out.println(sideToString(p.getSide()) + " goes again!");
-                } else{
-                    endTurn();
-                }
                 board[xcol][yrow] = p;
                 board[p.getxcol()][p.getyrow()] = nullPiece;
                 board[xcol][yrow].move(xcol, yrow);
@@ -393,12 +419,51 @@ public class Board extends JPanel {
                      || (p.getSide() == Color.red && yrow == 0)){
                     board[xcol][yrow].promote();
                 }
+                if (removedPiece) {
+                    updateScores(p);
+                    possibleMoves = getPossibleMoves(xcol, yrow);
+                    possibleMoves = removeNonJumps(possibleMoves);
+                    if (!possibleMoves.isEmpty()){
+                        System.out.println("\n" + sideToString(p.getSide()) + " goes again!");
+                    }
+                    else{
+                        endTurn();
+                    }
+                } else{
+                    endTurn();
+                }
                 repaint();
-
             }
         } else {
             System.out.println("Not your turn!");
         }
+    }
+
+    private void updateScores(Piece activePiece){
+        if (activePiece.getSide() == Color.blue){
+            blueScore++;
+        } else if (activePiece.getSide() == Color.red){
+            redScore++;
+        }
+        if (blueScore >= NUM_PIECES_PER_SIDE){
+            blueWins();
+        } else if(redScore >= NUM_PIECES_PER_SIDE){
+            redWins();
+        }
+    }
+
+    private void blueWins(){
+        System.out.println("Blue Wins!");
+        setGameOver();
+    }
+
+    private void redWins(){
+        System.out.println("Red Wins!");
+        setGameOver();
+    }
+
+    private void setGameOver(){
+        gameOver = true;
     }
 
     private void startNewTurn(){
