@@ -1,23 +1,44 @@
 import java.awt.*;
 
 public class Piece{
-    //red or blue
-    public Color side;
+    //red or blue -> pawn colors
+    //magenta or green -> queen colors
+    private Color side;
     private double x,y;
     private int xcol,yrow;
     private double tileWidth, tileHeight;
     private double tilePaddingH, tilePaddingV;
     private double boardPaddingH, boardPaddingV;
     private double pieceWidth, pieceHeight;
-    private boolean queen = false;
+    private boolean queen;
+    private Color queenColor;
+
+    public Piece(Piece p){
+        this.queen = p.queen;
+        this.queenColor = p.queenColor;
+        this.side = p.side;
+        this.xcol = p.xcol;
+        this.yrow = p.yrow;
+        this.tileWidth = p.tileWidth;
+        this.tileHeight = p.tileHeight;
+        this.tilePaddingH = p.tilePaddingH;
+        this.tilePaddingV = p.tilePaddingV;
+        this.boardPaddingH = p.boardPaddingH;
+        this.boardPaddingV = p.boardPaddingV;
+        this.pieceWidth = tileWidth - tilePaddingH;
+        this.pieceHeight = tileHeight - tilePaddingV;
+
+        this.setX();
+        this.setY();
+    }
 
     public Piece(Color side,
                 int xcol, int yrow, 
                 double tileWidth, double tileHeight,
                 double tilePaddingH, double tilePaddingV,
                 double boardPaddingH, double boardPaddingV){
-                    
-        this.side = side;
+        this.queen = false;
+        this.side = side;  
         this.xcol = xcol;
         this.yrow = yrow;
         this.tileWidth = tileWidth;
@@ -30,6 +51,7 @@ public class Piece{
         this.pieceHeight = tileHeight - tilePaddingV;
         this.setX();
         this.setY();
+        this.setQueenColor();
     }
 
     private void setX(){
@@ -48,7 +70,12 @@ public class Piece{
     }
 
     public void render(Graphics g){
-        g.setColor(this.side);
+        if (this.isQueen()){
+            g.setColor(this.queenColor);
+        }
+        else{
+            g.setColor(this.side);
+        }
         g.fillOval((int)this.x, (int)this.y, (int)this.pieceWidth, (int)this.pieceHeight);
     }
 
@@ -60,6 +87,57 @@ public class Piece{
             return Color.blue;
         }
         else return null;
+    }
+
+    public boolean isEnemyOf(Piece p){
+        if (this.getEnemyQueenColor() == p.getQueenColor() || this.getEnemySide() == p.getSide()){
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isPawn(){
+        return !this.queen;
+    }
+
+    public void setXY(int xcol, int yrow){
+        this.xcol = xcol;
+        this.yrow = yrow;
+        setX();
+        setY();
+    }
+
+    private void setQueenColor(){
+        if (this.side == Color.blue){
+            this.queenColor = Color.green;
+        }
+        else if (this.side == Color.red){
+            this.queenColor = Color.magenta;
+        }
+    }
+
+    public Color getEnemyQueenColor(){
+        if (this.side == Color.blue){
+            return Color.magenta;
+        }
+        else if (this.side == Color.red){
+            return Color.green;
+        }
+        else return null;
+    }
+
+    public Color getQueenColor(){
+        return this.queenColor;
+    }
+
+    public void promote(){
+        this.queen = true;
+        if (this.side == Color.blue){
+            this.queenColor = Color.green;
+        }
+        else if (this.side == Color.red){
+            this.queenColor = Color.magenta;
+        }
     }
 
     public boolean isQueen(){
@@ -104,89 +182,4 @@ public class Piece{
     public void print(){
         System.out.print(Integer.toString(this.xcol) + "," + Integer.toString(this.yrow));
     }
-
-    public boolean isEnemyOf(Piece p){
-        if (this.getEnemySide() == p.side){
-            return true;
-        }
-        return false;
-    }
-
-    //public int x,y,width,row,col;
-    //public String level;
-    ////either up or down
-    //public String direction;
-    //public Color color;
-    //public String side;
-    //private int tileWidth, totalPadding;
-    //private int numRows;
-    //public Piece(int pwidth, int prow, int pcol, int pnumRows, int tileWidth, int totalPadding, Color pcolor){
-    //    this.tileWidth = tileWidth;
-    //    this.totalPadding = totalPadding;
-    //    this.width = pwidth;
-    //    this.row = prow;
-    //    this.col = pcol;
-    //    this.color = pcolor;
-    //    this.numRows = pnumRows;
-    //    this.level = "pawn";
-    //    setNewLocation();
-    //    setInitialDirection();
-    //    setSide();
-    //}
-    //private void setNewLocation(){
-    //    this.y = this.row*tileWidth+totalPadding;
-    //    this.x = this.col*tileWidth+totalPadding;
-    //}
-    //private void setSide(){
-    //    if (this.color == Color.red){
-    //        this.side = "red";
-    //    }
-    //    else{
-    //        this.side = "blue";
-    //    }
-    //}
-    //private void setRows(int row, int col){
-    //    this.row = row;
-    //    this.col = col;
-    //}
-    //private void setInitialDirection(){
-    //    if (this.color == Color.red){
-    //        this.direction = "down";
-    //    }
-    //    else{
-    //        this.direction = "up";
-    //    }
-    //}
-
-    //public void movePieceTo(int row, int col){
-    //    setRows(row,col);
-    //    setNewLocation();
-    //}
-    //public boolean isNullPiece(){
-    //    if (this.row < 0 || this.row >= this.numRows || col < 0 || this.col >= this.numRows){
-    //        return true;
-    //    }
-    //    return false;
-    //}
-    //public void promote(){
-    //    this.level = "queen";
-    //    this.direction = "any";
-    //    if (this.color == Color.red){
-    //        this.color = Color.magenta;
-    //    }
-    //    if (this.color == Color.blue){
-    //        this.color = Color.green;
-    //    }
-    //}
-    //public boolean validDestination(int destrow, int destcol){
-    //    return false;
-    //}
-    //public String enemySide(){
-    //    if (this.color == Color.red){
-    //        return "blue";
-    //    }
-    //    else {
-    //        return "red";
-    //    }
-    //}
 }

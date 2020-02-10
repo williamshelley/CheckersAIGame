@@ -4,7 +4,6 @@ import javax.swing.JFrame;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
-import java.util.concurrent.*;
 
 public class Window extends JFrame {
     /**
@@ -38,11 +37,22 @@ public class Window extends JFrame {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         while (isRunning) {
             try {
-                System.out.print("Q,P,(C,x,y),(sX,sY,dX,dY): ");
+                System.out.print("Q,P,undo,(C,x,y),(K,x,y),(sX,sY,dX,dY),(promote,x,y): ");
                 String select = reader.readLine();
                 if (select.contains("q") || select.contains("Q")) {
                     isRunning = false;
                     window.end();
+                } else if(select.contains("promote")){
+                    String[] cmd = select.split(",");
+                    int x = Integer.parseInt(cmd[1]);
+                    int y = Integer.parseInt(cmd[2]);
+                    window.board.promote(x, y);
+                } else if (select.contains("end")){
+                    if (window.board.getHasMovedThisTurn()){
+                        window.board.endTurn();
+                    }
+                } else if (select.contains("undo")){
+                    window.board.undoLastMove();
                 } else if (select.contains("p") || select.contains("P")) {
                     window.board.printBoard();
                 } else if (select.contains("c") || select.contains("C")) {
