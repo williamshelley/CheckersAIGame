@@ -180,6 +180,18 @@ public class Piece{
     }
 
     public void print(){
-        System.out.print(Integer.toString(this.xcol) + "," + Integer.toString(this.yrow));
+        System.out.print(this.toString());
+    }
+
+    public boolean isAllyOf(Piece p){
+        return (this.side == p.side);
+    }
+
+    public String toString(){
+        String res = Integer.toString(this.xcol) + "," + Integer.toString(this.yrow);
+        if (this.isNull()){
+            res = "-,-";
+        }
+        return res;
     }
 }

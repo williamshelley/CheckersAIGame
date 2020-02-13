@@ -4,6 +4,8 @@ import javax.swing.JFrame;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 
 public class Window extends JFrame {
     /**
@@ -15,6 +17,7 @@ public class Window extends JFrame {
     private Board board;
     public static int WINDOW_WIDTH = 500;
     public static int WINDOW_HEIGHT = 500;
+    private String movesMade = "";
 
     public Window(int width, int height, String title) {
         setTitle(title);
@@ -28,6 +31,14 @@ public class Window extends JFrame {
     }
 
     public void end() {
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter("LastGameMoves.txt"));
+            writer.write(this.movesMade);
+            writer.close();
+        } catch (IOException e) {
+            System.out.println(e);
+            System.out.println("Failed to write to file!");
+        }
         dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
     }
 
@@ -44,10 +55,17 @@ public class Window extends JFrame {
             if (select.contains("q") || select.contains("Q")) {
                 isRunning = false;
                 this.end();
-            }else if (select.contains("end")){
+            }else if (select.contains("promote")){
+                String[] cmd = select.split(",");
+                int x = Integer.parseInt(cmd[1]);
+                int y = Integer.parseInt(cmd[2]);
+                this.board.promote(x,y);
+            } else if (select.contains("end")){
                 if (this.board.getHasMovedThisTurn()){
                     this.board.endTurn();
                 }
+            } else if (select.contains("getall")){
+                this.board.printAllPossibleMovesOnSide(side);
             } else if (select.contains("undo")){
                 this.board.undoLastMove();
             } else if (select.contains("p") || select.contains("P")) {
@@ -71,7 +89,14 @@ public class Window extends JFrame {
                 }
             }
         } catch (IndexOutOfBoundsException e) {
+            System.out.println(e);
             System.out.println("Invalid Input");
+        } catch (NumberFormatException e){
+            System.out.println(e);
+            System.out.println("Invalid Input");
+        } catch (NullPointerException e){
+            System.out.println(e);
+            System.out.println("Invalid Aaction");
         }
     }
 
@@ -80,14 +105,14 @@ public class Window extends JFrame {
         boolean isRunning = true;
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         while (isRunning) {
-            System.out.print("Q,P,undo,(C,x,y),(sX,sY,dX,dY): ");
+            System.out.print("Q,P,getall,undo,(C,x,y),(sX,sY,dX,dY): ");
             String select = reader.readLine();
+            window.movesMade+=select+"\n";
             window.playAs(window.board.currentTurn(), select, isRunning);
-            isRunning = !window.board.gameIsOver();
-            if (!isRunning){
+            if (window.board.gameIsOver()){
+                isRunning = false;
                 window.end();
             }
         }
     }
-
 }
