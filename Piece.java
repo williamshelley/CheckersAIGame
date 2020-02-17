@@ -183,8 +183,18 @@ public class Piece{
         System.out.print(this.toString());
     }
 
+    public Color queenSide(){
+        if (this.queenColor == Color.green){
+            return Color.blue;
+        }
+        else if(this.queenColor == Color.magenta){
+            return Color.red;
+        }
+        return null;
+    }
+
     public boolean isAllyOf(Piece p){
-        return (this.side == p.side);
+        return (this.side == p.side || this.queenSide() == p.queenSide());
     }
 
     public String toString(){

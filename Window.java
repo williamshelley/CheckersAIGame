@@ -3,6 +3,7 @@ import java.awt.event.*;
 import javax.swing.JFrame;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.concurrent.TimeUnit;
 import java.io.IOException;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -18,6 +19,7 @@ public class Window extends JFrame {
     public static int WINDOW_WIDTH = 500;
     public static int WINDOW_HEIGHT = 500;
     private String movesMade = "";
+    private boolean aiMove = true;
 
     public Window(int width, int height, String title) {
         setTitle(title);
@@ -51,6 +53,8 @@ public class Window extends JFrame {
     }
 
     public void playAs(Color side, String select, boolean isRunning){
+        boolean render = true;
+        
         try {
             if (select.contains("q") || select.contains("Q")) {
                 isRunning = false;
@@ -74,7 +78,7 @@ public class Window extends JFrame {
                 String[] cmd = select.split(",");
                 int x = Integer.parseInt(cmd[1]);
                 int y = Integer.parseInt(cmd[2]);
-                this.board.printPossibleMoves(x, y);
+                this.board.printPossibleMovesForPiece(x, y);
             } else if (select.contains(",")) {
                 String[] xy = select.split(",");
                 int startx = Integer.parseInt(xy[0]);
@@ -83,7 +87,8 @@ public class Window extends JFrame {
                 int endy = Integer.parseInt(xy[3]);
                 Piece piece = this.board.getBoard()[startx][starty];
                 if (piece.getSide() == side){
-                    this.board.move(piece, endx, endy);
+                    this.board.move(piece, endx, endy, render);
+                    aiMove = true;
                 } else{
                     System.out.println("It is " + getColor(piece.getEnemySide()) + "'s turn!");
                 }
@@ -91,25 +96,42 @@ public class Window extends JFrame {
         } catch (IndexOutOfBoundsException e) {
             System.out.println(e);
             System.out.println("Invalid Input");
+            aiMove = false;
         } catch (NumberFormatException e){
             System.out.println(e);
             System.out.println("Invalid Input");
+            aiMove = false;
         } catch (NullPointerException e){
             System.out.println(e);
             System.out.println("Invalid Aaction");
+            aiMove = false;
         }
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
         Window window = new Window(WINDOW_WIDTH, WINDOW_HEIGHT, "CHECKERS");
         boolean isRunning = true;
+        AlphaBeta redPlayer = new AlphaBeta(Color.red);
+        AlphaBeta bluePlayer = new AlphaBeta(Color.blue);
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         while (isRunning) {
+            if (window.board.currentTurn() == Color.red && window.aiMove){
+                redPlayer.play(window.board);
+                //window.aiMove = false;
+            }
+            else if (window.board.currentTurn() == Color.blue && window.aiMove){
+                bluePlayer.play(window.board);
+                //window.aiMove = false;
+            }
+            /*
             System.out.print("Q,P,getall,undo,(C,x,y),(sX,sY,dX,dY): ");
             String select = reader.readLine();
             window.movesMade+=select+"\n";
-            window.playAs(window.board.currentTurn(), select, isRunning);
+            window.playAs(Color.red, select, isRunning);
+            */
             if (window.board.gameIsOver()){
+                System.out.println("end and close");
+                window.board.results();
                 isRunning = false;
                 window.end();
             }

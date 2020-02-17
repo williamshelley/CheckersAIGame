@@ -1,11 +1,7 @@
 import javax.swing.JPanel;
 import java.awt.*;
 import java.util.*;
-import java.io.BufferedWriter;
-import java.io.BufferedReader;
-import java.io.FileWriter;
-import java.io.FileReader;
-import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 public class Board extends JPanel {
     /**
@@ -49,8 +45,11 @@ public class Board extends JPanel {
     private int redScore;
     private int blueScore;
     private boolean gameOver;
+    private boolean jumpsAvailable;
+    private boolean START_RED = true;
 
     public Board(Board b) {
+        jumpsAvailable = b.jumpsAvailable;
         gameOver = b.gameOver;
         redScore = b.redScore;
         blueScore = b.blueScore;
@@ -76,17 +75,62 @@ public class Board extends JPanel {
                 board[x][y] = new Piece(b.board[x][y]);
             }
         }
+        lastMoveBoard = b.lastMoveBoard;
     }
 
-    public boolean gameIsOver() {
-        return gameOver;
+    public void printList(ArrayList<Point[]> list){
+        for (Point[] points : list){
+            for (Point p : points){
+                p.print();
+                System.out.print("  ");
+            }
+            System.out.println();
+        }
+    }
+
+    public boolean gameIsOver() throws InterruptedException {
+        int numRed = this.numPiecesOnSide(Color.red);
+        int numBlue = this.numPiecesOnSide(Color.blue);
+        ArrayList<Point[]> movesRed = getAllPossibleMovesForSide(Color.red);
+        ArrayList<Point[]> movesBlue = getAllPossibleMovesForSide(Color.blue);
+        //System.out.println("moves red: " + str(movesRed.size()));
+        //printList(movesRed);
+        //System.out.println("moves blue: " + str(movesBlue.size()));
+        //printList(movesBlue);
+        ///System.out.println(jumpsAreAvailable(movesBlue));
+        //printAllPossibleMovesOnSide(Color.red);
+        //gameOver = (numRed == 0 || numBlue == 0);
+        //System.out.println(jumpsAvailable);
+        System.out.println("numRed: " + str(numRed));
+        System.out.println("numBlue: " + str(numBlue));
+        System.out.println("numRedMoves: " + str(movesRed.size()));
+        System.out.println("numBlueMoves: " + str(movesBlue.size()));
+        //TimeUnit.MILLISECONDS.sleep(10);
+        return (
+            numRed <= 0 || numBlue <= 0 
+            || (redTurn && movesRed.size() < 1) 
+            || (!redTurn && movesBlue.size() < 1)
+        );
+    }
+
+    public void results(){
+        int numRed = numPiecesOnSide(Color.red);
+        int numBlue = numPiecesOnSide(Color.blue);
+        if (numBlue > numRed) {
+            blueWins();
+        } else if (numRed > numBlue) {
+            redWins();
+        } else {
+            System.out.println("Draw you idiots!");
+        }
     }
 
     public Board(int windowWidth, int windowHeight) {
+        jumpsAvailable = false;
         gameOver = false;
         redScore = 0;
         blueScore = 0;
-        redTurn = true;
+        redTurn = START_RED;
         hasMovedThisTurn = false;
         gameStarted = false;
         SCREEN_WIDTH = (double) windowWidth;
@@ -109,6 +153,8 @@ public class Board extends JPanel {
                 tiles[x][y] = nullTile;
             }
         }
+        lastMoveBoard = this;
+        resetBoard();
         repaint();
     }
 
@@ -173,13 +219,14 @@ public class Board extends JPanel {
         return validMove;
     }
 
-    private boolean removePiece(ArrayList<Point[]> moves, int xcol, int yrow) {
+    private boolean removePiece(ArrayList<Point[]> possibles, Piece source, int xcol, int yrow) {
         Point pxy = new Point(xcol, yrow);
+        Point srcXY = new Point(source.getxcol(), source.getyrow());
+        ArrayList<Point[]> moves = getPossibleMovesForPiece(source.getxcol(), source.getyrow());
         for (Point[] p : moves) {
-            if (p[0].equals(pxy)) {
-                if (p[1].x >= 0 && p[1].y >= 0) {
+            if (p[0].equals(pxy) && p[2].equals(srcXY)) {
+                if (!p[1].isNull()) {
                     board[p[1].x][p[1].y] = nullPiece;
-                    moves.remove(p);
                     return true;
                 }
             }
@@ -187,7 +234,7 @@ public class Board extends JPanel {
         return false;
     }
 
-    private void resetBoard(Graphics g) {
+    private void resetBoard() {
         int blueCount = 0;
         int redCount = 0;
         for (int y = 0; y < NUM_ROWSY; y++) {
@@ -211,7 +258,6 @@ public class Board extends JPanel {
                             TILE_V_INNER_PADDING, BOARD_H_PADDING, BOARD_V_PADDING);
                     blueCount++;
                 }
-
             }
         }
         gameStarted = true;
@@ -246,6 +292,7 @@ public class Board extends JPanel {
     }
 
     private void startNewTurn() {
+       // jumpsAvailable = false;
         hasMovedThisTurn = false;
     }
 
@@ -260,7 +307,6 @@ public class Board extends JPanel {
                 } else {
                     res += p.toString() + " | ";
                 }
-
             }
             res += "\n\n";
         }
@@ -268,7 +314,7 @@ public class Board extends JPanel {
         return res;
     }
 
-    private String sideToString(Color color) {
+    public String sideToString(Color color) {
         if (color == Color.red) {
             return "Red";
         } else if (color == Color.blue) {
@@ -277,37 +323,21 @@ public class Board extends JPanel {
         return color.toString();
     }
 
-    public void printPossibleMoves(int xcol, int yrow) {
-        ArrayList<Point[]> possibleMoves = getPossibleMoves(xcol, yrow);
-
-        System.out.print("| ");
-        for (Point[] p : possibleMoves) {
-            System.out.print("<");
-            p[0].print();
-            System.out.print("> <");
-            p[1].print();
-            System.out.print("> | ");
-        }
-        System.out.println();
-    }
-
-
     // index 0 is all possible points reachable
     // index 1 are initialized to null, filled if there is a jump possibility with
     // the stationary point
-    public ArrayList<Point[]> getPossibleMoves(int xcol, int yrow) {
+    public ArrayList<Point[]> getPossibleMovesForPiece(int xcol, int yrow) {
         Piece p = board[xcol][yrow];
         ArrayList<Point[]> possibleMoves = new ArrayList<>();
 
         if (p.isPawn()) {
             possibleMoves = getPawnMoves(xcol, yrow);
 
-        } else {
-            if (p.isQueen()) {
-                possibleMoves = getQueenMoves(xcol, yrow);
-            }
+        } else if (p.isQueen()) {
+            possibleMoves = getQueenMoves(xcol, yrow);
         }
-        if (hasMovedThisTurn) {
+        if (hasMovedThisTurn || jumpsAreAvailable(possibleMoves)) {
+            
             possibleMoves = removeNonJumps(possibleMoves);
         }
         return possibleMoves;
@@ -316,25 +346,43 @@ public class Board extends JPanel {
 
     //index 0 of each element is the target piece to move
     //index 1 of each element is the destination
-    public void addMovesToList(ArrayList<Point[]> moves, int xcol, int yrow) {
+    private void addToAllPossibleMoves(ArrayList<Point[]> moves, int xcol, int yrow) {
         Piece p = board[xcol][yrow];
         if (p.isPawn()) {
             ArrayList<Point[]> m = getPawnMoves(xcol, yrow);
+            //System.out.println(m.size());
+            if (hasMovedThisTurn || jumpsAreAvailable(m)){
+                //m = removeNonJumps(m);
+            }
+            //System.out.println(m.size());
             for (Point[] points : m){
-                Point[] pt = new Point[2];
+                Point[] pt = new Point[3];
                 pt[0] = new Point(xcol,yrow);
                 pt[1] = points[0];
+                pt[2] = points[1];
                 moves.add(pt);
             }
 
         } else {
             if (p.isQueen()) {
                 ArrayList<Point[]> m = getQueenMoves(xcol, yrow);
+                if (hasMovedThisTurn || jumpsAreAvailable(m)){
+                    //m = removeNonJumps(m);
+                }
                 for (Point[] points : m){
-                    moves.add(points);
+                    Point[] pt = new Point[3];
+                    pt[0] = new Point(xcol,yrow);
+                    pt[1] = points[0];
+                    pt[2] = points[1];
+                    moves.add(pt);
                 }
             }
         }
+
+    }
+
+    public boolean jumpIsAvailable(){
+        return jumpsAvailable;
     }
 
     public ArrayList<Point[]> getAllPossibleMovesForSide(Color side) {
@@ -342,24 +390,19 @@ public class Board extends JPanel {
         for (Piece[] pieces : board) {
             for (Piece piece : pieces) {
                 if (piece.getSide() == side) {
-                    addMovesToList(moves, piece.getxcol(), piece.getyrow());
+                    ArrayList<Point[]> m = getPossibleMovesForPiece(piece.getxcol(), piece.getyrow());
+                    for (Point[] points : m){
+                        moves.add(points);
+                    }
                 }
             }
         }
-        return moves;
-    }
-
-    public void printAllPossibleMovesOnSide(Color side){
-        ArrayList<Point[]> moves = getAllPossibleMovesForSide(Color.red);
-        System.out.println();
-        for (Point[] p : moves) {
-            System.out.print("<");
-            p[0].print();
-            System.out.print("> <");
-            p[1].print();
-            System.out.print("> | ");
+        for (Point[] points : moves){
+            if (!points[1].isNull()){
+                moves = removeNonJumps(moves);
+            }
         }
-        System.out.println("\n");
+        return moves;
     }
 
     private void addToQueenMoves(ArrayList<Point[]> moves, Piece jumper, int xdir, int ydir) {
@@ -370,13 +413,14 @@ public class Board extends JPanel {
         while (inBounds(lx) && inBounds(ly)) {
             Piece p = board[lx][ly];
             if (p.isNull()) {
-                Point[] points = new Point[2];
+                Point[] points = new Point[3];
                 Piece dest = nullPiece;
                 if (inBounds(lastPoint.x) && inBounds(lastPoint.y)) {
                     dest = board[lastPoint.x][lastPoint.y];
                 }
                 points[0] = new Point(lx, ly);
                 points[1] = new Point(-1, -1);
+                points[2] = new Point(jumper.getxcol(),jumper.getyrow());
                 if (!lastPoint.isNull() && dest.isEnemyOf(jumper)) {
                     points[1] = new Point(lastPoint.x, lastPoint.y);
                 }
@@ -399,8 +443,9 @@ public class Board extends JPanel {
     private void addToPawnMoves(ArrayList<Point[]> moves, Piece origin, int xcol, int yrow) {
         Piece p = origin;
         Piece dest = board[xcol][yrow];
-        Point[] points = new Point[2];
+        Point[] points = new Point[3];
         points[1] = new Point(-1, -1);
+        points[2] = new Point(p.getxcol(),p.getyrow());
         int distanceX = xcol - p.getxcol();
         int distanceY = yrow - p.getyrow();
         int absDist = Math.abs(distanceX) + Math.abs(distanceY);
@@ -472,14 +517,30 @@ public class Board extends JPanel {
         addToQueenMoves(moves, origin, 1, 1);
         addToQueenMoves(moves, origin, -1, -1);
         addToQueenMoves(moves, origin, -1, 1);
+        
         return moves;
     }
 
+    public Piece[][] copyBoard(Piece[][] original){
+        Piece[][] res = new Piece[original.length][original[0].length];
+        for (int i = 0; i < res.length; i++){
+            for (int j = 0; j < res[i].length; j++){
+                res[i][j] = original[i][j];
+            }
+        }
+        return res;
+    }
+
     public void undoLastMove() {
-        this.board = lastMoveBoard.board;
+        this.jumpsAvailable = lastMoveBoard.jumpsAvailable;
+        this.board = copyBoard(lastMoveBoard.board);
         this.redTurn = lastMoveBoard.redTurn;
         this.hasMovedThisTurn = lastMoveBoard.hasMovedThisTurn;
-        this.lastMoveBoard = lastMoveBoard.lastMoveBoard;
+        this.lastMoveBoard = new Board(lastMoveBoard.lastMoveBoard);
+        this.gameOver = lastMoveBoard.gameOver;
+        this.redScore = lastMoveBoard.redScore;
+        this.blueScore = lastMoveBoard.blueScore;
+        
         System.out.println("undid move");
         repaint();
     }
@@ -494,23 +555,33 @@ public class Board extends JPanel {
         return result;
     }
 
-    // when reach end of rows on either end, turn said piece into queen
-    public void move(Piece p, int xcol, int yrow) {
-        boolean correctPieceForTurn = (redTurn && p.getSide() == Color.red)
-                || (redTurn && p.getQueenColor() == Color.magenta) || (!redTurn && p.getSide() == Color.blue)
-                || (!redTurn && p.getQueenColor() == Color.green);
-        if (correctPieceForTurn) {
-            ArrayList<Point[]> possibleMoves = getPossibleMoves(p.getxcol(), p.getyrow());
+    public void render(){
+        repaint();
+    }
 
-            if (hasMovedThisTurn) {
-                possibleMoves = removeNonJumps(possibleMoves);
+    public boolean jumpsAreAvailable(ArrayList<Point[]> moves){
+        for (Point[] points: moves){
+            if (!points[1].isNull()){
+                jumpsAvailable = true;
+                return true;
             }
+        }
+        return false;
+    }
+
+    public void move(Piece p, int xcol, int yrow, boolean render) {
+        boolean correctPieceForTurn = (redTurn && p.getSide() == Color.red)
+               // || (redTurn && p.getQueenColor() == Color.magenta) 
+                || (!redTurn && p.getSide() == Color.blue);
+               // || (!redTurn && p.getQueenColor() == Color.green);
+        ArrayList<Point[]> possibleMoves = getAllPossibleMovesForSide(currentTurn());
+        if (correctPieceForTurn) {
             boolean validMove = validateMove(possibleMoves, p, xcol, yrow);
             boolean removedPiece = false;
             if (validMove) {
                 this.lastMoveBoard = new Board(this);
                 hasMovedThisTurn = true;
-                removedPiece = removePiece(possibleMoves, xcol, yrow);
+                removedPiece = removePiece(possibleMoves, p, xcol, yrow);
                 board[xcol][yrow] = p;
                 board[p.getxcol()][p.getyrow()] = nullPiece;
                 board[xcol][yrow].move(xcol, yrow);
@@ -518,8 +589,9 @@ public class Board extends JPanel {
                     board[xcol][yrow].promote();
                 }
                 if (removedPiece) {
+                    System.out.println("Took Piece!");
                     updateScores(p);
-                    possibleMoves = getPossibleMoves(xcol, yrow);
+                    possibleMoves = getPossibleMovesForPiece(xcol, yrow);
                     possibleMoves = removeNonJumps(possibleMoves);
                     if (!possibleMoves.isEmpty()) {
                         System.out.println("\n" + sideToString(p.getSide()) + " goes again!");
@@ -529,13 +601,16 @@ public class Board extends JPanel {
                 } else {
                     endTurn();
                 }
-                repaint();
+                if (render) {
+                    repaint();
+                }
             }
         } else {
-            System.out.println("Not your turn!");
+            printList(possibleMoves);
+            Color opposingSide = this.opposingColor(this.currentTurn());
+            System.out.println("Not " + this.sideToString(opposingSide) + "'s' turn! It is " + sideToString(this.currentTurn()) + "'s turn!'");
         }
     }
-
     public boolean getHasMovedThisTurn() {
         return hasMovedThisTurn;
     }
@@ -549,7 +624,8 @@ public class Board extends JPanel {
     }
 
     public void endTurn() {
-        if (hasMovedThisTurn) {
+        if (hasMovedThisTurn){
+            jumpsAvailable = false;
             redTurn = !redTurn;
             startNewTurn();
             System.out.println("Ended Turn!");
@@ -558,7 +634,7 @@ public class Board extends JPanel {
 
     public void paint(Graphics g) {
         if (!gameStarted) {
-            this.resetBoard(g);
+            this.resetBoard();
         }
         for (int x = 0; x < NUM_COLSX; x++) {
             for (int y = 0; y < NUM_ROWSY; y++) {
@@ -572,15 +648,19 @@ public class Board extends JPanel {
         }
     }
 
-    public void update() {
-        repaint();
-    }
-
     public void promote(int xcol, int yrow) {
         if (!board[xcol][yrow].isNull()) {
             board[xcol][yrow].promote();
-            this.update();
+            repaint();
         }
+    }
+
+    public Piece getPiece(int xcol, int yrow){
+        return this.board[xcol][yrow];
+    }
+
+    public Piece getPiece(Point p){
+        return this.board[p.x][p.y];
     }
 
     public Piece[][] getBoard() {
@@ -588,7 +668,6 @@ public class Board extends JPanel {
     }
 
     public void printBoard() {
-
         System.out.println();
         for (int y = 0; y < NUM_ROWSY; y++) {
             System.out.print("| ");
@@ -605,4 +684,79 @@ public class Board extends JPanel {
         }
         System.out.println("\n");
     }
+
+    public void printPossibleMovesForPiece(int xcol, int yrow) {
+        ArrayList<Point[]> possibleMoves = getPossibleMovesForPiece(xcol, yrow);
+
+        System.out.print("| ");
+        for (Point[] p : possibleMoves) {
+            System.out.print("<");
+            p[0].print();
+            System.out.print("> <");
+            p[1].print();
+            System.out.print("> <");
+            p[2].print();
+            System.out.print("> | ");
+        }
+        System.out.println();
+    }
+
+
+
+    public void printAllPossibleMovesOnSide(Color side){
+        ArrayList<Point[]> moves = getAllPossibleMovesForSide(side);
+
+        System.out.println();
+        for (Point[] p : moves) {
+            System.out.print("<");
+            p[0].print();
+            System.out.print("> <");
+            p[1].print();
+            System.out.print("> <");
+            p[2].print();
+            System.out.print("> | ");
+        }
+        System.out.println("\n");
+    }
+
+
+    public int numPiecesOnSide(Color side){
+        int count = 0;
+        for (Piece[] pieces : board){
+            for (Piece p : pieces){
+                if (p.getSide() == side){
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    public int numQueensOnSide(Color side){
+        int count = 0;
+        for (Piece[] pieces : board){
+            for (Piece p : pieces){
+                if (p.queenSide() == side){
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    public Color opposingColor(Color yourSide){
+        if (yourSide == Color.red){
+            return Color.blue;
+        } else{
+            return Color.red;
+        }
+    }
+
+    public int getValue(){
+        Color opposing = opposingColor(this.currentTurn());
+        int thisSide = numPiecesOnSide(this.currentTurn()) + 2 * numQueensOnSide(this.currentTurn());
+        int opponent = numPiecesOnSide(opposing) + 2 * numQueensOnSide(opposing);
+        return opponent - thisSide;
+    }
 }
+
