@@ -24,21 +24,17 @@ public class AlphaBeta {
         int beta = Integer.MAX_VALUE;
         recursiveDepth = 0;
         maxBestMove = -1;
-        System.out.println(maxValue(b, alpha, beta));
+        maxValue(b, alpha, beta);
     }
 
     // opponent's move
     public int minValue(Board b, int alpha, int beta) throws InterruptedException {
-        System.out.println("min " + (b.gameIsOver() ||recursiveDepth > maxRecurse));
         if (b.gameIsOver() || recursiveDepth++ > maxRecurse) {
             return b.getValue();
         }
-        System.out.println("min");
         Color opposing = b.opposingColor(this.side);
         ArrayList<Point[]> possibleMoves = b.getAllPossibleMovesForSide(opposing);
-        b.printAllPossibleMovesOnSide(opposing);
-        b.printBoard();
-          int moveIndex = 0;
+        int moveIndex = 0;
         while (alpha < beta && moveIndex < possibleMoves.size()){
             Point[] move = possibleMoves.get(moveIndex);
             Piece startLoc = b.getPiece(move[2]);
@@ -54,10 +50,6 @@ public class AlphaBeta {
             if (value < beta) {
                 beta = value;
             }
-            System.out.print("alpha in min: ");
-            System.out.println(Integer.toString(alpha));
-            System.out.print("beta in min: ");
-            System.out.println(Integer.toString(beta));
             moveIndex++;
         }
         return beta;
@@ -66,14 +58,10 @@ public class AlphaBeta {
     // alpha beta move
     // 0 destination, 1 piece taken, 2 source location
     public int maxValue(Board b, int alpha, int beta) throws InterruptedException {
-        System.out.println("max " + (b.gameIsOver() ||recursiveDepth > maxRecurse));
         if (b.gameIsOver() || recursiveDepth++ > maxRecurse) {
             return b.getValue();
         }
-        System.out.println("max");
         ArrayList<Point[]> possibleMoves = b.getAllPossibleMovesForSide(this.side);
-        b.printAllPossibleMovesOnSide(this.side);
-        b.printBoard();
         int moveIndex = 0;
         while (alpha < beta && moveIndex < possibleMoves.size()){
             Point[] move = possibleMoves.get(moveIndex);
@@ -91,14 +79,9 @@ public class AlphaBeta {
                 alpha = value;
                 maxBestMove = moveIndex;
             }
-            System.out.print("alpha in max: ");
-            System.out.println(Integer.toString(alpha));
-            System.out.print("beta in max: ");
-            System.out.println(Integer.toString(beta));
             moveIndex++;
         }
         Point[] move = possibleMoves.get(maxBestMove);
-        b.printList(possibleMoves);
         Piece startLoc = b.getPiece(move[2]);
         b.move(startLoc, move[0].x,move[0].y,renderBestMove);
         return alpha;

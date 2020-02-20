@@ -1,7 +1,6 @@
 import javax.swing.JPanel;
 import java.awt.*;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 public class Board extends JPanel {
     /**
@@ -9,25 +8,25 @@ public class Board extends JPanel {
      */
     private static final long serialVersionUID = 1L;
 
-    private final double SCREEN_WIDTH;
-    private final double SCREEN_HEIGHT;
+    private static final double SCREEN_WIDTH = Window.WINDOW_WIDTH;
+    private static final double SCREEN_HEIGHT = Window.WINDOW_HEIGHT;
 
     private static final int BOARD_DIM = 8;
-    private final int NUM_PIECES_PER_SIDE = 12;
+    private static final int NUM_PIECES_PER_SIDE = 12;
 
-    private final int NUM_COLSX = BOARD_DIM;
-    private final int NUM_ROWSY = BOARD_DIM;
+    private static final int NUM_COLSX = BOARD_DIM;
+    private static final int NUM_ROWSY = BOARD_DIM;
     private static final double BOARD_PADDING_PERCENT = 0.05;
-    private final double BOARD_H_PADDING;
-    private final double BOARD_V_PADDING;
-    private final double BOARD_WIDTH;
-    private final double BOARD_HEIGHT;
+    private static final double BOARD_H_PADDING = SCREEN_WIDTH * BOARD_PADDING_PERCENT;
+    private static final double BOARD_V_PADDING = SCREEN_HEIGHT * BOARD_PADDING_PERCENT;
+    private static final double BOARD_WIDTH  = SCREEN_WIDTH - BOARD_H_PADDING * 2.0;
+    private static final double BOARD_HEIGHT = SCREEN_HEIGHT - BOARD_V_PADDING * 2.0;
 
+    private static final double TILE_WIDTH = BOARD_WIDTH / (double) NUM_COLSX;
+    private static final double TILE_HEIGHT = BOARD_HEIGHT / (double) NUM_ROWSY;;
     private static final double TILE_INNER_PADDING_PERCENT = 0.05;
-    private final double TILE_H_INNER_PADDING;
-    private final double TILE_V_INNER_PADDING;
-    private final double TILE_WIDTH;
-    private final double TILE_HEIGHT;
+    private static final double TILE_H_INNER_PADDING = TILE_WIDTH * TILE_INNER_PADDING_PERCENT;
+    private static final double TILE_V_INNER_PADDING = TILE_HEIGHT * TILE_INNER_PADDING_PERCENT;
 
     private final Color blue = Color.blue;
     private final Color red = Color.red;
@@ -42,30 +41,16 @@ public class Board extends JPanel {
     private boolean redTurn;
     private boolean hasMovedThisTurn;
 
-    private int redScore;
-    private int blueScore;
     private boolean gameOver;
-    private boolean jumpsAvailable;
     private boolean START_RED = true;
 
+    private boolean PRINT_LOG = false;
+
     public Board(Board b) {
-        jumpsAvailable = b.jumpsAvailable;
         gameOver = b.gameOver;
-        redScore = b.redScore;
-        blueScore = b.blueScore;
         redTurn = b.redTurn;
         hasMovedThisTurn = b.hasMovedThisTurn;
         gameStarted = true;
-        SCREEN_WIDTH = (double) b.SCREEN_WIDTH;
-        SCREEN_HEIGHT = (double) b.SCREEN_HEIGHT;
-        BOARD_H_PADDING = SCREEN_WIDTH * BOARD_PADDING_PERCENT;
-        BOARD_V_PADDING = SCREEN_HEIGHT * BOARD_PADDING_PERCENT;
-        BOARD_WIDTH = SCREEN_WIDTH - BOARD_H_PADDING * 2.0;
-        BOARD_HEIGHT = SCREEN_HEIGHT - BOARD_V_PADDING * 2.0;
-        TILE_WIDTH = BOARD_WIDTH / (double) NUM_COLSX;
-        TILE_HEIGHT = BOARD_HEIGHT / (double) NUM_ROWSY;
-        TILE_H_INNER_PADDING = TILE_WIDTH * TILE_INNER_PADDING_PERCENT;
-        TILE_V_INNER_PADDING = TILE_HEIGHT * TILE_INNER_PADDING_PERCENT;
         board = new Piece[NUM_COLSX][NUM_ROWSY];
         nullPiece = new Piece(null, -1, -1, 0, 0, 0, 0, 0, 0);
         tiles = b.tiles;
@@ -78,6 +63,39 @@ public class Board extends JPanel {
         lastMoveBoard = b.lastMoveBoard;
     }
 
+    
+    public Board() {
+        gameOver = false;
+        redTurn = START_RED;
+        hasMovedThisTurn = false;
+        gameStarted = false;
+        board = new Piece[NUM_COLSX][NUM_ROWSY];
+        tiles = new Tile[NUM_COLSX][NUM_ROWSY];
+        nullPiece = new Piece(null, -1, -1, 0, 0, 0, 0, 0, 0);
+        nullTile = new Tile(null, 0, 0, 0, 0, 0, 0);
+        for (int x = 0; x < NUM_COLSX; x++) {
+            for (int y = 0; y < NUM_ROWSY; y++) {
+                board[x][y] = nullPiece;
+                tiles[x][y] = nullTile;
+            }
+        }
+        lastMoveBoard = this;
+        resetBoard();
+        repaint();
+    }
+    
+    public void results(){
+        int numRed = numPiecesOnSide(Color.red);
+        int numBlue = numPiecesOnSide(Color.blue);
+        if (numBlue > numRed) {
+            blueWins();
+        } else if (numRed > numBlue) {
+            redWins();
+        } else {
+            System.out.println("Draw you idiots!");
+        }
+    }
+    
     public void printList(ArrayList<Point[]> list){
         for (Point[] points : list){
             for (Point p : points){
@@ -93,69 +111,11 @@ public class Board extends JPanel {
         int numBlue = this.numPiecesOnSide(Color.blue);
         ArrayList<Point[]> movesRed = getAllPossibleMovesForSide(Color.red);
         ArrayList<Point[]> movesBlue = getAllPossibleMovesForSide(Color.blue);
-        //System.out.println("moves red: " + str(movesRed.size()));
-        //printList(movesRed);
-        //System.out.println("moves blue: " + str(movesBlue.size()));
-        //printList(movesBlue);
-        ///System.out.println(jumpsAreAvailable(movesBlue));
-        //printAllPossibleMovesOnSide(Color.red);
-        //gameOver = (numRed == 0 || numBlue == 0);
-        //System.out.println(jumpsAvailable);
-        System.out.println("numRed: " + str(numRed));
-        System.out.println("numBlue: " + str(numBlue));
-        System.out.println("numRedMoves: " + str(movesRed.size()));
-        System.out.println("numBlueMoves: " + str(movesBlue.size()));
-        //TimeUnit.MILLISECONDS.sleep(10);
         return (
             numRed <= 0 || numBlue <= 0 
             || (redTurn && movesRed.size() < 1) 
             || (!redTurn && movesBlue.size() < 1)
         );
-    }
-
-    public void results(){
-        int numRed = numPiecesOnSide(Color.red);
-        int numBlue = numPiecesOnSide(Color.blue);
-        if (numBlue > numRed) {
-            blueWins();
-        } else if (numRed > numBlue) {
-            redWins();
-        } else {
-            System.out.println("Draw you idiots!");
-        }
-    }
-
-    public Board(int windowWidth, int windowHeight) {
-        jumpsAvailable = false;
-        gameOver = false;
-        redScore = 0;
-        blueScore = 0;
-        redTurn = START_RED;
-        hasMovedThisTurn = false;
-        gameStarted = false;
-        SCREEN_WIDTH = (double) windowWidth;
-        SCREEN_HEIGHT = (double) windowHeight;
-        BOARD_H_PADDING = SCREEN_WIDTH * BOARD_PADDING_PERCENT;
-        BOARD_V_PADDING = SCREEN_HEIGHT * BOARD_PADDING_PERCENT;
-        BOARD_WIDTH = SCREEN_WIDTH - BOARD_H_PADDING * 2.0;
-        BOARD_HEIGHT = SCREEN_HEIGHT - BOARD_V_PADDING * 2.0;
-        TILE_WIDTH = BOARD_WIDTH / (double) NUM_COLSX;
-        TILE_HEIGHT = BOARD_HEIGHT / (double) NUM_ROWSY;
-        TILE_H_INNER_PADDING = TILE_WIDTH * TILE_INNER_PADDING_PERCENT;
-        TILE_V_INNER_PADDING = TILE_HEIGHT * TILE_INNER_PADDING_PERCENT;
-        board = new Piece[NUM_COLSX][NUM_ROWSY];
-        tiles = new Tile[NUM_COLSX][NUM_ROWSY];
-        nullPiece = new Piece(null, -1, -1, 0, 0, 0, 0, 0, 0);
-        nullTile = new Tile(null, 0, 0, 0, 0, 0, 0);
-        for (int x = 0; x < NUM_COLSX; x++) {
-            for (int y = 0; y < NUM_ROWSY; y++) {
-                board[x][y] = nullPiece;
-                tiles[x][y] = nullTile;
-            }
-        }
-        lastMoveBoard = this;
-        resetBoard();
-        repaint();
     }
 
     private String str(int i) {
@@ -263,20 +223,6 @@ public class Board extends JPanel {
         gameStarted = true;
     }
 
-
-    private void updateScores(Piece activePiece) {
-        if (activePiece.getSide() == Color.blue) {
-            blueScore++;
-        } else if (activePiece.getSide() == Color.red) {
-            redScore++;
-        }
-        if (blueScore >= NUM_PIECES_PER_SIDE) {
-            blueWins();
-        } else if (redScore >= NUM_PIECES_PER_SIDE) {
-            redWins();
-        }
-    }
-
     private void blueWins() {
         System.out.println("Blue Wins!");
         setGameOver();
@@ -292,7 +238,6 @@ public class Board extends JPanel {
     }
 
     private void startNewTurn() {
-       // jumpsAvailable = false;
         hasMovedThisTurn = false;
     }
 
@@ -341,48 +286,6 @@ public class Board extends JPanel {
             possibleMoves = removeNonJumps(possibleMoves);
         }
         return possibleMoves;
-    }
-
-
-    //index 0 of each element is the target piece to move
-    //index 1 of each element is the destination
-    private void addToAllPossibleMoves(ArrayList<Point[]> moves, int xcol, int yrow) {
-        Piece p = board[xcol][yrow];
-        if (p.isPawn()) {
-            ArrayList<Point[]> m = getPawnMoves(xcol, yrow);
-            //System.out.println(m.size());
-            if (hasMovedThisTurn || jumpsAreAvailable(m)){
-                //m = removeNonJumps(m);
-            }
-            //System.out.println(m.size());
-            for (Point[] points : m){
-                Point[] pt = new Point[3];
-                pt[0] = new Point(xcol,yrow);
-                pt[1] = points[0];
-                pt[2] = points[1];
-                moves.add(pt);
-            }
-
-        } else {
-            if (p.isQueen()) {
-                ArrayList<Point[]> m = getQueenMoves(xcol, yrow);
-                if (hasMovedThisTurn || jumpsAreAvailable(m)){
-                    //m = removeNonJumps(m);
-                }
-                for (Point[] points : m){
-                    Point[] pt = new Point[3];
-                    pt[0] = new Point(xcol,yrow);
-                    pt[1] = points[0];
-                    pt[2] = points[1];
-                    moves.add(pt);
-                }
-            }
-        }
-
-    }
-
-    public boolean jumpIsAvailable(){
-        return jumpsAvailable;
     }
 
     public ArrayList<Point[]> getAllPossibleMovesForSide(Color side) {
@@ -532,16 +435,14 @@ public class Board extends JPanel {
     }
 
     public void undoLastMove() {
-        this.jumpsAvailable = lastMoveBoard.jumpsAvailable;
         this.board = copyBoard(lastMoveBoard.board);
         this.redTurn = lastMoveBoard.redTurn;
         this.hasMovedThisTurn = lastMoveBoard.hasMovedThisTurn;
         this.lastMoveBoard = new Board(lastMoveBoard.lastMoveBoard);
         this.gameOver = lastMoveBoard.gameOver;
-        this.redScore = lastMoveBoard.redScore;
-        this.blueScore = lastMoveBoard.blueScore;
-        
-        System.out.println("undid move");
+        if (PRINT_LOG){
+            System.out.println("Undid last move!");
+        }
         repaint();
     }
 
@@ -562,7 +463,6 @@ public class Board extends JPanel {
     public boolean jumpsAreAvailable(ArrayList<Point[]> moves){
         for (Point[] points: moves){
             if (!points[1].isNull()){
-                jumpsAvailable = true;
                 return true;
             }
         }
@@ -571,9 +471,7 @@ public class Board extends JPanel {
 
     public void move(Piece p, int xcol, int yrow, boolean render) {
         boolean correctPieceForTurn = (redTurn && p.getSide() == Color.red)
-               // || (redTurn && p.getQueenColor() == Color.magenta) 
                 || (!redTurn && p.getSide() == Color.blue);
-               // || (!redTurn && p.getQueenColor() == Color.green);
         ArrayList<Point[]> possibleMoves = getAllPossibleMovesForSide(currentTurn());
         if (correctPieceForTurn) {
             boolean validMove = validateMove(possibleMoves, p, xcol, yrow);
@@ -589,12 +487,15 @@ public class Board extends JPanel {
                     board[xcol][yrow].promote();
                 }
                 if (removedPiece) {
-                    System.out.println("Took Piece!");
-                    updateScores(p);
+                    if (PRINT_LOG){
+                        System.out.println("Took Piece!");
+                    }
                     possibleMoves = getPossibleMovesForPiece(xcol, yrow);
                     possibleMoves = removeNonJumps(possibleMoves);
                     if (!possibleMoves.isEmpty()) {
-                        System.out.println("\n" + sideToString(p.getSide()) + " goes again!");
+                        if (PRINT_LOG){
+                            System.out.println("\n" + sideToString(p.getSide()) + " goes again!");
+                        }
                     } else {
                         endTurn();
                     }
@@ -606,9 +507,10 @@ public class Board extends JPanel {
                 }
             }
         } else {
-            printList(possibleMoves);
             Color opposingSide = this.opposingColor(this.currentTurn());
-            System.out.println("Not " + this.sideToString(opposingSide) + "'s' turn! It is " + sideToString(this.currentTurn()) + "'s turn!'");
+            if (PRINT_LOG){
+                System.out.println("Not " + this.sideToString(opposingSide) + "'s' turn! It is " + sideToString(this.currentTurn()) + "'s turn!'");
+            }
         }
     }
     public boolean getHasMovedThisTurn() {
@@ -625,10 +527,11 @@ public class Board extends JPanel {
 
     public void endTurn() {
         if (hasMovedThisTurn){
-            jumpsAvailable = false;
             redTurn = !redTurn;
             startNewTurn();
-            System.out.println("Ended Turn!");
+            if (PRINT_LOG){
+                System.out.println("Ended Turn!");
+            }
         }
     }
 
@@ -754,8 +657,8 @@ public class Board extends JPanel {
 
     public int getValue(){
         Color opposing = opposingColor(this.currentTurn());
-        int thisSide = numPiecesOnSide(this.currentTurn()) + 2 * numQueensOnSide(this.currentTurn());
-        int opponent = numPiecesOnSide(opposing) + 2 * numQueensOnSide(opposing);
+        int thisSide = numPiecesOnSide(this.currentTurn()) * numQueensOnSide(this.currentTurn());
+        int opponent = numPiecesOnSide(opposing) * numQueensOnSide(opposing);
         return opponent - thisSide;
     }
 }

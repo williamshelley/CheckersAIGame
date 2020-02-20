@@ -3,7 +3,6 @@ import java.awt.event.*;
 import javax.swing.JFrame;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.concurrent.TimeUnit;
 import java.io.IOException;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -16,8 +15,8 @@ public class Window extends JFrame {
 
     public static int BOARD_DIMS = 8;
     private Board board;
-    public static int WINDOW_WIDTH = 500;
-    public static int WINDOW_HEIGHT = 500;
+    public static int WINDOW_WIDTH = 850;
+    public static int WINDOW_HEIGHT = 850;
     private String movesMade = "";
     private boolean aiMove = true;
 
@@ -27,7 +26,7 @@ public class Window extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new GridLayout(1, 1, 0, 0));
-        board = new Board(WINDOW_WIDTH, WINDOW_HEIGHT);
+        board = new Board();
         add(board);
         setVisible(true);
     }
@@ -44,33 +43,33 @@ public class Window extends JFrame {
         dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
     }
 
-    public static String getColor(Color c){
-        if (c == Color.red || c == Color.magenta){
+    public static String getColor(Color c) {
+        if (c == Color.red || c == Color.magenta) {
             return "Red";
         } else {
             return "Blue";
         }
     }
 
-    public void playAs(Color side, String select, boolean isRunning){
+    public void playAs(Color side, String select, boolean isRunning) {
         boolean render = true;
-        
+
         try {
             if (select.contains("q") || select.contains("Q")) {
                 isRunning = false;
                 this.end();
-            }else if (select.contains("promote")){
+            } else if (select.contains("promote")) {
                 String[] cmd = select.split(",");
                 int x = Integer.parseInt(cmd[1]);
                 int y = Integer.parseInt(cmd[2]);
-                this.board.promote(x,y);
-            } else if (select.contains("end")){
-                if (this.board.getHasMovedThisTurn()){
+                this.board.promote(x, y);
+            } else if (select.contains("end")) {
+                if (this.board.getHasMovedThisTurn()) {
                     this.board.endTurn();
                 }
-            } else if (select.contains("getall")){
+            } else if (select.contains("getall")) {
                 this.board.printAllPossibleMovesOnSide(side);
-            } else if (select.contains("undo")){
+            } else if (select.contains("undo")) {
                 this.board.undoLastMove();
             } else if (select.contains("p") || select.contains("P")) {
                 this.board.printBoard();
@@ -86,10 +85,10 @@ public class Window extends JFrame {
                 int endx = Integer.parseInt(xy[2]);
                 int endy = Integer.parseInt(xy[3]);
                 Piece piece = this.board.getBoard()[startx][starty];
-                if (piece.getSide() == side){
+                if (piece.getSide() == side) {
                     this.board.move(piece, endx, endy, render);
                     aiMove = true;
-                } else{
+                } else {
                     System.out.println("It is " + getColor(piece.getEnemySide()) + "'s turn!");
                 }
             }
@@ -97,11 +96,11 @@ public class Window extends JFrame {
             System.out.println(e);
             System.out.println("Invalid Input");
             aiMove = false;
-        } catch (NumberFormatException e){
+        } catch (NumberFormatException e) {
             System.out.println(e);
             System.out.println("Invalid Input");
             aiMove = false;
-        } catch (NullPointerException e){
+        } catch (NullPointerException e) {
             System.out.println(e);
             System.out.println("Invalid Aaction");
             aiMove = false;
@@ -114,23 +113,32 @@ public class Window extends JFrame {
         AlphaBeta redPlayer = new AlphaBeta(Color.red);
         AlphaBeta bluePlayer = new AlphaBeta(Color.blue);
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+
+        boolean PLAYER_VS_AI = false;
+
         while (isRunning) {
-            if (window.board.currentTurn() == Color.red && window.aiMove){
-                redPlayer.play(window.board);
-                //window.aiMove = false;
-            }
-            else if (window.board.currentTurn() == Color.blue && window.aiMove){
+            if (window.board.currentTurn() == Color.red && window.aiMove) {
+                if (!PLAYER_VS_AI) {
+                    redPlayer.play(window.board);
+                }
+                if (PLAYER_VS_AI) {
+                    window.aiMove = false;
+                }
+            } else if (window.board.currentTurn() == Color.blue && window.aiMove) {
                 bluePlayer.play(window.board);
-                //window.aiMove = false;
+                if (PLAYER_VS_AI) {
+                    window.aiMove = false;
+                }
             }
-            /*
-            System.out.print("Q,P,getall,undo,(C,x,y),(sX,sY,dX,dY): ");
-            String select = reader.readLine();
-            window.movesMade+=select+"\n";
-            window.playAs(Color.red, select, isRunning);
-            */
-            if (window.board.gameIsOver()){
-                System.out.println("end and close");
+
+            if (PLAYER_VS_AI) {
+                System.out.print("Q,P,getall,undo,(C,x,y),(sX,sY,dX,dY): ");
+                String select = reader.readLine();
+                window.movesMade += select + "\n";
+                window.playAs(Color.red, select, isRunning);
+            }
+
+            if (window.board.gameIsOver()) {
                 window.board.results();
                 isRunning = false;
                 window.end();
