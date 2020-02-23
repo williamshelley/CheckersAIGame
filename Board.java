@@ -41,13 +41,11 @@ public class Board extends JPanel {
     private boolean redTurn;
     private boolean hasMovedThisTurn;
 
-    private boolean gameOver;
     private boolean START_RED = true;
 
     private boolean PRINT_LOG = false;
 
     public Board(Board b) {
-        gameOver = b.gameOver;
         redTurn = b.redTurn;
         hasMovedThisTurn = b.hasMovedThisTurn;
         gameStarted = true;
@@ -62,10 +60,8 @@ public class Board extends JPanel {
         }
         lastMoveBoard = b.lastMoveBoard;
     }
-
     
     public Board() {
-        gameOver = false;
         redTurn = START_RED;
         hasMovedThisTurn = false;
         gameStarted = false;
@@ -225,16 +221,10 @@ public class Board extends JPanel {
 
     private void blueWins() {
         System.out.println("Blue Wins!");
-        setGameOver();
     }
 
     private void redWins() {
         System.out.println("Red Wins!");
-        setGameOver();
-    }
-
-    private void setGameOver() {
-        gameOver = true;
     }
 
     private void startNewTurn() {
@@ -439,7 +429,6 @@ public class Board extends JPanel {
         this.redTurn = lastMoveBoard.redTurn;
         this.hasMovedThisTurn = lastMoveBoard.hasMovedThisTurn;
         this.lastMoveBoard = new Board(lastMoveBoard.lastMoveBoard);
-        this.gameOver = lastMoveBoard.gameOver;
         if (PRINT_LOG){
             System.out.println("Undid last move!");
         }
@@ -513,6 +502,7 @@ public class Board extends JPanel {
             }
         }
     }
+
     public boolean getHasMovedThisTurn() {
         return hasMovedThisTurn;
     }
@@ -604,8 +594,6 @@ public class Board extends JPanel {
         System.out.println();
     }
 
-
-
     public void printAllPossibleMovesOnSide(Color side){
         ArrayList<Point[]> moves = getAllPossibleMovesForSide(side);
 
@@ -621,7 +609,6 @@ public class Board extends JPanel {
         }
         System.out.println("\n");
     }
-
 
     public int numPiecesOnSide(Color side){
         int count = 0;

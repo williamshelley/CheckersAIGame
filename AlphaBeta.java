@@ -25,6 +25,10 @@ public class AlphaBeta {
         recursiveDepth = 0;
         maxBestMove = -1;
         maxValue(b, alpha, beta);
+        ArrayList<Point[]> possibleMoves = b.getAllPossibleMovesForSide(this.side);
+        Point[] move = possibleMoves.get(maxBestMove);
+        Piece startLoc = b.getPiece(move[2]);
+        b.move(startLoc, move[0].x,move[0].y,renderBestMove);
     }
 
     // opponent's move
@@ -81,9 +85,6 @@ public class AlphaBeta {
             }
             moveIndex++;
         }
-        Point[] move = possibleMoves.get(maxBestMove);
-        Piece startLoc = b.getPiece(move[2]);
-        b.move(startLoc, move[0].x,move[0].y,renderBestMove);
         return alpha;
     }
 }

@@ -1,0 +1,28 @@
+compilation:
+	javac Window.java
+
+run:
+	java Window
+
+to play:
+	Player vs Alpha-Beta:
+		Make sure that PLAYER_VS_AI boolean in Window's main method is set to true.
+		Run the program.
+		Input formats are:
+			Values should be in range [0,7]
+				Move a piece: 
+					startColumn,startRow,destinationColumn,destinationRow
+				Print a piece's possible moves:
+					c, targetColumn, targetRow
+				Print all possible moves for the side who is about to move:
+					getall
+				Print the board:
+					p
+				Exit the program:
+					q
+
+Board Interface:
+	move(Piece p, int column, int row)
+	undoLastMove() 
+	gameIsOver() --> returns a bool
+	getAllPossibleMovesForSide(Color side) --> Returns ArrayList<Point[]>
