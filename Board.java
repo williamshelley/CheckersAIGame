@@ -41,7 +41,7 @@ public class Board extends JPanel {
     private boolean redTurn;
     private boolean hasMovedThisTurn;
 
-    private boolean START_RED = true;
+    private boolean START_RED = false;
 
     private boolean PRINT_LOG = false;
 
@@ -107,9 +107,10 @@ public class Board extends JPanel {
         int numBlue = this.numPiecesOnSide(Color.blue);
         ArrayList<Point[]> movesRed = getAllPossibleMovesForSide(Color.red);
         ArrayList<Point[]> movesBlue = getAllPossibleMovesForSide(Color.blue);
+
         return (
             numRed <= 0 || numBlue <= 0 
-            || (redTurn && movesRed.size() < 1) 
+            || (redTurn && movesRed.size() < 1)
             || (!redTurn && movesBlue.size() < 1)
         );
     }
@@ -644,8 +645,14 @@ public class Board extends JPanel {
 
     public int getValue(){
         Color opposing = opposingColor(this.currentTurn());
-        int thisSide = numPiecesOnSide(this.currentTurn()) * numQueensOnSide(this.currentTurn());
-        int opponent = numPiecesOnSide(opposing) * numQueensOnSide(opposing);
+        int thisSide = numPiecesOnSide(this.currentTurn()) * (numQueensOnSide(this.currentTurn()) + 5);
+        int opponent = numPiecesOnSide(opposing) * (numQueensOnSide(opposing) + 5);
+        ArrayList<Point[]> moves = removeNonJumps(getAllPossibleMovesForSide(this.currentTurn()));
+        int numProtected = numPiecesOnSide(opposing) - moves.size();
+        ArrayList<Point[]> enemyMoves = removeNonJumps(getAllPossibleMovesForSide(opposing));
+        int numEnemyProtected = numPiecesOnSide(this.currentTurn()) - enemyMoves.size();
+        opponent = opponent * numEnemyProtected;
+        thisSide = thisSide * numProtected;
         return opponent - thisSide;
     }
 }

@@ -8,7 +8,7 @@ public class AlphaBeta {
 
     Color side;
     int recursiveDepth = 0;
-    int maxRecurse = 24;
+    int maxRecurse = Integer.MAX_VALUE;
     int maxBestMove = -1;
 
     public Color getSide(){
@@ -77,7 +77,7 @@ public class AlphaBeta {
             } else {
                 value = this.minValue(b, alpha, beta);
             }
-            b.undoLastMove();
+            b.undoLastMove();  
 
             if (value > alpha) {
                 alpha = value;

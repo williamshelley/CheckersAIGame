@@ -3,6 +3,7 @@ import java.awt.event.*;
 import javax.swing.JFrame;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.concurrent.TimeUnit;
 import java.io.IOException;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -117,6 +118,7 @@ public class Window extends JFrame {
         boolean PLAYER_VS_AI = false;
 
         while (isRunning) {
+            TimeUnit.SECONDS.sleep(1);
             if (window.board.currentTurn() == Color.red && window.aiMove) {
                 if (!PLAYER_VS_AI) {
                     redPlayer.play(window.board);
