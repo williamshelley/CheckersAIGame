@@ -113,7 +113,7 @@ public class Window extends JFrame {
         AlphaBeta redPlayer = new AlphaBeta(Color.red);
         AlphaBeta bluePlayer = new AlphaBeta(Color.blue);
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-
+        QLearner blueQLearner = new QLearner(Color.blue);
         boolean PLAYER_VS_AI = false;
 
         while (isRunning) {
@@ -125,7 +125,8 @@ public class Window extends JFrame {
                     window.aiMove = false;
                 }
             } else if (window.board.currentTurn() == Color.blue && window.aiMove) {
-                bluePlayer.play(window.board);
+                //bluePlayer.play(window.board);
+                blueQLearner.makeMove(window.board);
                 if (PLAYER_VS_AI) {
                     window.aiMove = false;
                 }
@@ -139,7 +140,7 @@ public class Window extends JFrame {
             }
 
             if (window.board.gameIsOver()) {
-                window.board.results();
+                window.board.results(true);
                 isRunning = false;
                 window.end();
             }

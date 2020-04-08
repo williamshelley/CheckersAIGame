@@ -41,9 +41,13 @@ public class Board extends JPanel {
     private boolean redTurn;
     private boolean hasMovedThisTurn;
 
-    private boolean START_RED = true;
+    public boolean START_RED = true;
 
     private boolean PRINT_LOG = false;
+
+    public Board getLastBoard(){
+        return lastMoveBoard;
+    }
 
     public Board(Board b) {
         redTurn = b.redTurn;
@@ -80,15 +84,18 @@ public class Board extends JPanel {
         repaint();
     }
     
-    public void results(){
+    public Color results(boolean printThis){
         int numRed = numPiecesOnSide(Color.red);
         int numBlue = numPiecesOnSide(Color.blue);
         if (numBlue > numRed) {
-            blueWins();
+            if (printThis) blueWins();
+            return Color.blue;
         } else if (numRed > numBlue) {
-            redWins();
+            if (printThis) redWins();
+            return Color.red;
         } else {
-            System.out.println("Draw you idiots!");
+            if (printThis) System.out.println("Draw you idiots!");
+            return Color.black;
         }
     }
     
