@@ -1,11 +1,16 @@
 import java.awt.*;
 import java.awt.event.*;
+
+import javax.naming.InitialContext;
 import javax.swing.JFrame;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.io.*;
 
 public class Window extends JFrame {
     /**
@@ -107,6 +112,42 @@ public class Window extends JFrame {
         }
     }
 
+    public static int[] readStatsFromFile(String fileName){
+        int[] stats = {0,0};
+        try {
+            String data = "";
+            File file = new File(fileName + ".txt");
+            Scanner reader = new Scanner(file);
+            int index = 0;
+            while(reader.hasNextLine() && index < stats.length){
+                String line = reader.nextLine();
+                stats[index] = Integer.parseInt(line.split(":")[1]);
+                index++;
+                data += line;
+            }
+            reader.close();
+        } catch(FileNotFoundException e) {
+            System.out.println(e);
+            writeStatsToFile(fileName, 0, 0);
+            readStatsFromFile(fileName);
+        }
+        return stats;
+    }
+
+    public static void writeStatsToFile(String fileName, int numWins, int totalGames) {
+        try {
+            File file = new File(fileName + ".txt");
+            FileWriter writer = new FileWriter(fileName + ".txt");
+            file.createNewFile();
+            writer.write("numWins:"+Integer.toString(numWins));
+            writer.write("\ntotalGames:"+Integer.toString(totalGames));
+            writer.close();
+
+        } catch (IOException e) {
+            System.out.println(e);
+        }
+    }
+
     public static void main(String[] args) throws IOException, InterruptedException {
         Window window = new Window(WINDOW_WIDTH, WINDOW_HEIGHT, "CHECKERS");
         boolean isRunning = true;
@@ -115,8 +156,16 @@ public class Window extends JFrame {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         QLearner blueQLearner = new QLearner(Color.blue);
         boolean PLAYER_VS_AI = false;
-
-        while (isRunning) {
+        String statsFileName = "QLearner-Stats";
+        int[] stats = readStatsFromFile(statsFileName);
+        int numGamesToPlay = 79991;
+        int numQLearnerWins = stats[0];
+        int currentGame = stats[1];
+        int initialNumGames = currentGame;
+        //int totalNumGamesToBePlayed = initialNumGames + numGamesToPlay;
+        int totalNumGamesToBePlayed = 1000000;
+        double i = 1.0;
+        while (currentGame < totalNumGamesToBePlayed) {
             if (window.board.currentTurn() == Color.red && window.aiMove) {
                 if (!PLAYER_VS_AI) {
                     redPlayer.play(window.board);
@@ -140,9 +189,18 @@ public class Window extends JFrame {
             }
 
             if (window.board.gameIsOver()) {
-                window.board.results(true);
-                isRunning = false;
-                window.end();
+                TimeUnit.MILLISECONDS.sleep(200);
+                Color winner = window.board.results(false);
+                currentGame++;
+                if (winner == blueQLearner.side){
+                    numQLearnerWins++;
+                }
+                window.board = new Board();
+                if (currentGame % 100 == 0){
+                    System.out.println("Game Number: " + Integer.toString(currentGame) + " -- " + window.board.sideToString(winner));
+                    blueQLearner.writeWeightsToFile();
+                    writeStatsToFile(statsFileName, numQLearnerWins, currentGame);
+                }
             }
         }
     }

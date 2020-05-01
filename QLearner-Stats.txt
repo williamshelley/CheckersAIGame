@@ -1,0 +1,2 @@
+numWins:613974
+totalGames:1000000

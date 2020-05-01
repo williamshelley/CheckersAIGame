@@ -1,0 +1,7 @@
+keeping track of the weights (a vector)
+have to be able to calculate the features (a vector), types ex: num pieces per row are decided arbitrarily based on the game
+each feature should have its own function
+need to update a file per reinforcement learner with new weights
+v(s) = v(s) + alpha( v(s-prime) - v(s) )
+an episode is one entire game
+

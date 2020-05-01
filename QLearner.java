@@ -5,7 +5,7 @@ import java.io.*;
 public class QLearner {
 
     public final int numFeatures = 4;
-    public final double epsilon = 0.5;
+    public final double epsilon = 0.8;
     public final double stepsize = 0.1;
     public Color side;
     public Feature[] features = new Feature[numFeatures];
@@ -15,10 +15,10 @@ public class QLearner {
     public QLearner(Color side) {
         this.side = side;
         readWeightsFromFile();
-        features[0] = (Board b) -> (double) b.numPiecesOnSide(side);
-        features[1] = (Board b) -> (double) b.numPiecesOnSide(b.opposingColor(side));
-        features[2] = (Board b) -> (double) b.numQueensOnSide(side);
-        features[3] = (Board b) -> (double) b.numQueensOnSide(b.opposingColor(side));
+        features[0] = (Board b) -> (double) b.numPiecesOnSide(side) / 12.0;
+        features[1] = (Board b) -> (double) b.numPiecesOnSide(b.opposingColor(side)) / 12.0;
+        features[2] = (Board b) -> (double) b.numQueensOnSide(side) / 12.0;
+        features[3] = (Board b) -> (double) b.numQueensOnSide(b.opposingColor(side)) / 12.0;
     }
 
     public void makeMove(Board b) {
@@ -50,7 +50,7 @@ public class QLearner {
             b.move(startLoc, move[0].x, move[0].y, true);
         }
         updateWeights(b.getLastBoard(), b);
-        writeWeightsToFile();
+        //writeWeightsToFile();
     }
 
     public double getReward(Board b) {
@@ -71,16 +71,17 @@ public class QLearner {
     public double getValueOfState(Board b){
         double sum = 0;
         for (int i = 0; i < numFeatures; i++){
-            sum += weights[i]*features[i].calculate(b);
+            sum += weights[i] * features[i].calculate(b) ;
         }
         return sum;
     }
 
     public void updateWeights(Board oldState, Board newState) {
         for (int i = 0; i < numFeatures; i++){
+
             weights[i] = weights[i] + stepsize *
                 (getReward(newState) + getValueOfState(newState) 
-                - getValueOfState(oldState)) * features[i].calculate(oldState);
+                - getValueOfState(oldState));
         }
     }
 
