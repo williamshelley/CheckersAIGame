@@ -1,2 +1,2 @@
-numWins:613974
-totalGames:1000000
+numWins:16242
+totalGames:29400

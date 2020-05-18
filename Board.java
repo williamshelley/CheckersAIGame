@@ -119,6 +119,11 @@ public class Board extends JPanel {
             numRed <= 0 || numBlue <= 0 
             || (redTurn && movesRed.size() < 1)
             || (!redTurn && movesBlue.size() < 1)
+                || (numRed <= 1 && numBlue <= 1 && redTurn
+                        && !jumpsAreAvailable(movesRed) && !jumpsAreAvailable(
+                                movesBlue))
+                || (numRed <= 1 && numBlue <= 1 && !redTurn
+                        && !jumpsAreAvailable(movesBlue) && !jumpsAreAvailable(movesRed))
         );
     }
 

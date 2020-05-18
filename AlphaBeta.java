@@ -8,8 +8,9 @@ public class AlphaBeta {
 
     Color side;
     int recursiveDepth = 0;
-    int maxRecurse = Integer.MAX_VALUE;
+    int maxRecurse = 12;
     int maxBestMove = -1;
+    boolean firstMove = false;
 
     public Color getSide(){
         return this.side;
@@ -23,9 +24,13 @@ public class AlphaBeta {
         int alpha = Integer.MIN_VALUE;
         int beta = Integer.MAX_VALUE;
         recursiveDepth = 0;
-        maxBestMove = -1;
+        maxBestMove = 0;
         maxValue(b, alpha, beta);
         ArrayList<Point[]> possibleMoves = b.getAllPossibleMovesForSide(this.side);
+        if (maxBestMove > possibleMoves.size()-1){
+            System.out.println(maxBestMove);
+            System.out.println(possibleMoves.size());
+        }
         Point[] move = possibleMoves.get(maxBestMove);
         Piece startLoc = b.getPiece(move[2]);
         b.move(startLoc, move[0].x,move[0].y,renderBestMove);
@@ -77,11 +82,13 @@ public class AlphaBeta {
             } else {
                 value = this.minValue(b, alpha, beta);
             }
-            b.undoLastMove();  
+            b.undoLastMove();
 
             if (value > alpha) {
                 alpha = value;
-                maxBestMove = moveIndex;
+                if (recursiveDepth < 1){
+                    maxBestMove = moveIndex;
+                }
             }
             moveIndex++;
         }

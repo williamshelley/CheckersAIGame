@@ -15,10 +15,10 @@ public class QLearner {
     public QLearner(Color side) {
         this.side = side;
         readWeightsFromFile();
-        features[0] = (Board b) -> (double) b.numPiecesOnSide(side) / 12.0;
-        features[1] = (Board b) -> (double) b.numPiecesOnSide(b.opposingColor(side)) / 12.0;
-        features[2] = (Board b) -> (double) b.numQueensOnSide(side) / 12.0;
-        features[3] = (Board b) -> (double) b.numQueensOnSide(b.opposingColor(side)) / 12.0;
+        features[0] = (Board b) -> (double) b.numPiecesOnSide(side);
+        features[1] = (Board b) -> (double) b.numPiecesOnSide(b.opposingColor(side));
+        features[2] = (Board b) -> (double) b.numQueensOnSide(side);
+        features[3] = (Board b) -> (double) b.numQueensOnSide(b.opposingColor(side));
     }
 
     public void makeMove(Board b) {
@@ -32,19 +32,22 @@ public class QLearner {
             b.move(startLoc, move[0].x, move[0].y, true);
         } else {
             double maxMoveValue = Double.NEGATIVE_INFINITY;
-            int maxMoveIndex = -1;
+            int maxMoveIndex = (int) (Math.random()*10) % moves.size();
             for (int i = 0; i < moves.size(); i++) {
                 Point[] move = moves.get(i);
                 Piece startLoc = b.getPiece(move[2]);
                 b.move(startLoc, move[0].x, move[0].y, false);
                 double valueOfState = getValueOfState(b);
-                if (valueOfState > maxMoveValue) {
+                if (valueOfState >= maxMoveValue) {
                     maxMoveValue = valueOfState;
                     maxMoveIndex = i;
                 }
                 b.undoLastMove();
             }
-
+            if (maxMoveIndex > moves.size() - 1 || maxMoveIndex < 0) {
+                System.out.println(maxMoveIndex);
+                System.out.println(moves.size());
+            }
             Point[] move = moves.get(maxMoveIndex);
             Piece startLoc = b.getPiece(move[2]);
             b.move(startLoc, move[0].x, move[0].y, true);
@@ -77,11 +80,18 @@ public class QLearner {
     }
 
     public void updateWeights(Board oldState, Board newState) {
+        double magnitude = 0;
         for (int i = 0; i < numFeatures; i++){
-
             weights[i] = weights[i] + stepsize *
                 (getReward(newState) + getValueOfState(newState) 
                 - getValueOfState(oldState));
+            magnitude += weights[i] * weights[i];
+        }
+        magnitude = Math.sqrt(magnitude);
+        if (magnitude > 0){
+            for (int i = 0; i < numFeatures; i++){
+                weights[i] = weights[i] / magnitude;
+            }        
         }
     }
 
